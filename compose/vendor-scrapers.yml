@@ -1,0 +1,108 @@
+services:
+  # ============================================================
+  # BROWSERLESS INSTANCES
+  # ============================================================
+  
+  ced-browserless:
+    image: browserless/chrome:latest
+    container_name: ced-browserless
+    restart: unless-stopped
+    environment:
+      - TOKEN=${BROWSERLESS_TOKEN:-super_random_token}
+      - MAX_CONCURRENT_SESSIONS=5
+      - CONNECTION_TIMEOUT=60000
+    ports:
+      - "3010:3000"
+    shm_size: '2gb'
+    networks:
+      - vendor-scrapers-net
+
+  pool360-browserless:
+    image: browserless/chrome:latest
+    container_name: pool360-browserless
+    restart: unless-stopped
+    environment:
+      - TOKEN=${BROWSERLESS_TOKEN:-super_random_token}
+      - MAX_CONCURRENT_SESSIONS=5
+      - CONNECTION_TIMEOUT=60000
+    ports:
+      - "3020:3000"
+    shm_size: '2gb'
+    networks:
+      - vendor-scrapers-net
+
+  # ============================================================
+  # SCRAPER SERVICES
+  # ============================================================
+
+  ced-scraper-api:
+    build:
+      context: ../services/ced
+      dockerfile: Dockerfile
+    container_name: ced-scraper-api
+    restart: unless-stopped
+    ports:
+      - "3011:3000"
+    env_file:
+      - ../services/ced/.env
+    volumes:
+      - ../common:/app/common:ro
+    depends_on:
+      - ced-browserless
+    networks:
+      - vendor-scrapers-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  pool360-scraper-api:
+    build:
+      context: ../services/pool360
+      dockerfile: Dockerfile
+    container_name: pool360-scraper-api
+    restart: unless-stopped
+    ports:
+      - "3021:3000"
+    env_file:
+      - ../services/pool360/.env
+    volumes:
+      - ../common:/app/common:ro
+    depends_on:
+      - pool360-browserless
+    networks:
+      - vendor-scrapers-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  homedepot-scraper-api:
+    build:
+      context: ../services/homedepot
+      dockerfile: Dockerfile
+    container_name: homedepot-scraper-api
+    restart: unless-stopped
+    ports:
+      - "3022:3000"
+    env_file:
+      - ../services/homedepot/.env
+    volumes:
+      - ../common:/app/common:ro
+    networks:
+      - vendor-scrapers-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+networks:
+  vendor-scrapers-net:
+    driver: bridge
+    name: vendor-scrapers-net

@@ -1,0 +1,29 @@
+# Git
+.git
+.gitignore
+
+# Documentation
+*.md
+docs/
+
+# Environment files
+.env
+*.env.local
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+
+# Test
+coverage/
+.nyc_output/
+__tests__/
+*.test.js
+*.spec.js
+
+# Development
+node_modules/
+npm-debug.log*
